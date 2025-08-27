@@ -5,7 +5,7 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
-
+const PORT = process.env.PORT || 4000;
 let accessToken = null;
 let tokenExpires = 0;
 
@@ -28,7 +28,6 @@ async function getAccessToken() {
   return accessToken;
 }
 
-// Endpoint para buscar clipes
 app.get("/clips", async (req, res) => {
    try {
     const { channel, date } = req.query;
@@ -38,7 +37,6 @@ app.get("/clips", async (req, res) => {
 
     const token = await getAccessToken();
 
-    // pegar ID do usuário pelo login
     const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${channel}`, {
       headers: {
         "Client-ID": process.env.CLIENT_ID,
@@ -69,7 +67,7 @@ app.get("/clips", async (req, res) => {
     const clipsData = await clipsRes.json();
     res.json(clipsData);
   } catch (err) {
-    console.error("❌ Erro no /clips:", err);
+    console.error("Erro no /clips:", err);
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
@@ -81,7 +79,7 @@ app.get("/download-clip", async (req, res) => {
     const { clipId } = req.query;
     const token = await getAccessToken();
 
-    // Buscar dados do clip
+
     const clipRes = await fetch(`https://api.twitch.tv/helix/clips?id=${clipId}`, {
       headers: {
         "Client-ID": process.env.client_id,
@@ -94,10 +92,8 @@ app.get("/download-clip", async (req, res) => {
       return res.status(404).send("Clip não encontrado");
     }
 
-    // Gerar URL real do MP4
     const videoUrl = clipData.data[0].thumbnail_url.split("-preview-")[0] + ".mp4";
 
-    // Baixar vídeo e enviar para navegador
     const videoRes = await fetch(videoUrl);
     const videoBuffer = await videoRes.buffer();
 
@@ -112,4 +108,4 @@ app.get("/download-clip", async (req, res) => {
 });
 
 
-app.listen(4000, () => console.log("✅ Backend rodando em http://localhost:4000"));
+app.listen(PORT, () => console.log("Backend rodando."));
