@@ -89,7 +89,6 @@ button:active {
     <button onclick="buscar()">Buscar Clips</button>
   </div> 
   <div id="clips">
-    <h3>teste</h3>
   </div>
 
   <script>
@@ -98,7 +97,7 @@ button:active {
   const data = document.getElementById("data").value;
   if (!canal || !data) return alert("Digite canal e data!");
 
-  const res = await fetch(`http://localhost:4000/clips?channel=${canal}&date=${data}`);
+  const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}&date=${data}`);
   const json = await res.json();
 
   const clipsDiv = document.getElementById("clips");
@@ -108,11 +107,11 @@ button:active {
     clipsDiv.innerHTML = "<p>Nenhum clipe encontrado nesse dia.</p>";
     return;
   }
-
+  const host = window.location.hostname;
   json.data.forEach(clip => {
     const videoPreviewUrl = clip.thumbnail_url.split("-preview-")[0] + ".mp4"; 
-    const downloadUrl = `http://localhost:4000/download-clip?clipId=${clip.id}`; 
-    const embedUrl = `${clip.embed_url}&parent=127.0.0.1`;
+    const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
+    const embedUrl = `${clip.embed_url}&parent=${host}`;
 
     const div = document.createElement("div");
     div.className = "clip";
