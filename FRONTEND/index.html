@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Twitch Clips Download</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+   body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: #FAFAFA;
+    font-family: "Bebas Neue", sans-serif;
+    text-align: center;
+    width: 100vw;
+  }
+  #clips{
+    width: 100vw;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  iframe { 
+    margin: 20px; padding: 10px;
+    border-radius: 20px; 
+    filter: drop-shadow(0px 0px 5px #9146FF);
+  }
+
+  input, button { margin: 5px; padding: 10px; border-radius: 5px; }
+  .container-input{
+    display: flex;
+    flex-direction: column;
+  }
+  h1{
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: #9146FF;
+  }
+input {
+  background-color: #FFFFFF;  
+  border: 2px solid #E0E0E0;    
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus {
+  border-color: #9146FF;          
+  box-shadow: 0 0 6px rgba(145, 70, 255, 0.3);
+}
+
+button {
+  background: linear-gradient(90deg, #9146FF 0%, #772ce8 100%);  
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-weight: bolder;
+  text-transform: uppercase;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(145, 70, 255, 0.5);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+  <img src="assets/twitch.png" width="300px" style="margin-top: 50px;" alt="twitch logo">
+  <h1>Faça o download dos clipes</h1>
+  <div class=".container-input">
+    <div>
+      <input type="text" id="canal" placeholder="Twitch.tv/">
+      <input type="date" id="data">
+    </div>
+    <button onclick="buscar()">Buscar Clips</button>
+  </div> 
+  <div id="clips">
+    <h3>teste</h3>
+  </div>
+
+  <script>
+   async function buscar() {
+  const canal = document.getElementById("canal").value;
+  const data = document.getElementById("data").value;
+  if (!canal || !data) return alert("Digite canal e data!");
+
+  const res = await fetch(`http://localhost:4000/clips?channel=${canal}&date=${data}`);
+  const json = await res.json();
+
+  const clipsDiv = document.getElementById("clips");
+  clipsDiv.innerHTML = "";
+
+  if (!json.data || json.data.length === 0) {
+    clipsDiv.innerHTML = "<p>Nenhum clipe encontrado nesse dia.</p>";
+    return;
+  }
+
+  json.data.forEach(clip => {
+    const videoPreviewUrl = clip.thumbnail_url.split("-preview-")[0] + ".mp4"; 
+    const downloadUrl = `http://localhost:4000/download-clip?clipId=${clip.id}`; 
+    const embedUrl = `${clip.embed_url}&parent=127.0.0.1`;
+
+    const div = document.createElement("div");
+    div.className = "clip";
+    div.innerHTML = `
+    <iframe
+    src="${embedUrl}"
+    height="300"
+    width="400"
+    frameborder="0"
+    scrolling="no"
+    allowfullscreen="true">
+    </iframe><br>
+    <a href="${downloadUrl}" download>⬇️ Download</a>
+  `;
+    clipsDiv.appendChild(div);
+  });
+}
+  </script>
+</body>
+</html>
