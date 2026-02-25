@@ -29,20 +29,23 @@ async function getAccessToken() {
 }
 
 app.get("/clips", async (req, res) => {
-   try {
-    const { channel, date } = req.query;
-    if (!channel || !date) {
-      return res.status(400).json({ error: "Faltando parâmetros: channel e date" });
+  try {
+    const { channel } = req.query;
+
+    if (!channel) {
+      return res.status(400).json({ error: "Faltando parâmetro: channel" });
     }
 
     const token = await getAccessToken();
 
+    // 1. Buscar user_id pelo nome do canal
     const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${channel}`, {
       headers: {
         "Client-ID": process.env.CLIENT_ID,
         "Authorization": `Bearer ${token}`,
       },
     });
+
     const userData = await userRes.json();
 
     if (!userData.data || userData.data.length === 0) {
@@ -51,11 +54,9 @@ app.get("/clips", async (req, res) => {
 
     const userId = userData.data[0].id;
 
-    const start = `${date}T00:00:00Z`;
-    const end = `${date}T23:59:59Z`;
-
+    // 2. Buscar últimos 30 clips
     const clipsRes = await fetch(
-      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&started_at=${start}&ended_at=${end}`,
+      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=30`,
       {
         headers: {
           "Client-ID": process.env.CLIENT_ID,
@@ -65,6 +66,7 @@ app.get("/clips", async (req, res) => {
     );
 
     const clipsData = await clipsRes.json();
+
     res.json(clipsData);
   } catch (err) {
     console.error("Erro no /clips:", err);
