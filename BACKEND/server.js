@@ -28,48 +28,68 @@ async function getAccessToken() {
   return accessToken;
 }
 
-app.get("/clips", async (req, res) => {
+app.get("/clips-range", async (req, res) => {
   try {
-    const { channel } = req.query;
+    const { channel, date } = req.query;
 
-    if (!channel) {
-      return res.status(400).json({ error: "Faltando parâmetro: channel" });
+    if (!channel || !startDate) {
+      return res.status(400).json({
+        error: "Faltando parâmetros: channel e startDate",
+      });
     }
 
     const token = await getAccessToken();
 
-    // 1. Buscar user_id pelo nome do canal
-    const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${channel}`, {
-      headers: {
-        "Client-ID": process.env.CLIENT_ID,
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-
-    const userData = await userRes.json();
-
-    if (!userData.data || userData.data.length === 0) {
-      return res.status(404).json({ error: "Canal não encontrado" });
-    }
-
-    const userId = userData.data[0].id;
-
-    // 2. Buscar últimos 30 clips
-    const clipsRes = await fetch(
-      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=10`,
+    // 1️⃣ Buscar user_id
+    const userRes = await fetch(
+      `https://api.twitch.tv/helix/users?login=${channel}`,
       {
         headers: {
           "Client-ID": process.env.CLIENT_ID,
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const userData = await userRes.json();
+    const userId = userData.data?.[0]?.id;
+
+    if (!userId) {
+      return res.status(404).json({ error: "Canal não encontrado" });
+    }
+
+    // 2️⃣ Datas
+    const start = `${date}T00:00:00Z`;
+    const end = new Date().toISOString(); // 🔥 sempre agora
+
+    // 3️⃣ Buscar clips no range
+    const clipsRes = await fetch(
+      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&started_at=${start}&ended_at=${end}&first=15`,
+      {
+        headers: {
+          "Client-ID": process.env.CLIENT_ID,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
 
     const clipsData = await clipsRes.json();
 
-    res.json(clipsData);
+    if (!clipsData.data) {
+      return res.json([]);
+    }
+
+    // 4️⃣ Ordenar por mais recentes
+    const sorted = clipsData.data.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    // 5️⃣ Retornar os 10 mais recentes
+    const latest = sorted.slice(0, 15);
+
+    res.json(latest);
   } catch (err) {
-    console.error("Erro no /clips:", err);
+    console.error("Erro no /clips-range:", err);
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
