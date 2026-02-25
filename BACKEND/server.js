@@ -56,7 +56,7 @@ app.get("/clips", async (req, res) => {
 
     // 2. Buscar últimos 30 clips
     const clipsRes = await fetch(
-      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=30`,
+      `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=10`,
       {
         headers: {
           "Client-ID": process.env.CLIENT_ID,
