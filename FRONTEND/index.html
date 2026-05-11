@@ -5,6 +5,7 @@
   <title>Twitch Clips Download</title>
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
    body {
     min-height: 100vh;
@@ -13,122 +14,154 @@
     font-family: "Bebas Neue", sans-serif;
     text-align: center;
     width: 100vw;
+    overflow-x: hidden;
   }
-  #clips{
+  #clips {
     width: 100vw;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+    padding-bottom: 50px;
+  }
+
+  .clip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
   }
 
   iframe { 
-    margin: 20px; padding: 10px;
+    margin-bottom: 10px;
     border-radius: 20px; 
     filter: drop-shadow(0px 0px 5px #9146FF);
   }
 
   input, button { margin: 5px; padding: 10px; border-radius: 5px; }
-  .container-input{
+  
+  .container-input {
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
-  h1{
+  
+  h1 {
     font-size: 3rem;
     font-weight: 700;
     letter-spacing: 1.2px;
     color: #9146FF;
   }
-input {
-  background-color: #FFFFFF;  
-  border: 2px solid #E0E0E0;    
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 16px;
-  outline: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-}
+  
+  input {
+    background-color: #FFFFFF;  
+    border: 2px solid #E0E0E0;    
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 16px;
+    outline: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+    font-family: 'Inter', sans-serif;
+  }
 
-input:focus {
-  border-color: #9146FF;          
-  box-shadow: 0 0 6px rgba(145, 70, 255, 0.3);
-}
+  input:focus {
+    border-color: #9146FF;          
+    box-shadow: 0 0 6px rgba(145, 70, 255, 0.3);
+  }
 
-button {
-  background: linear-gradient(90deg, #9146FF 0%, #772ce8 100%);  
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  font-weight: bolder;
-  text-transform: uppercase;
-}
+  button {
+    background: linear-gradient(90deg, #9146FF 0%, #772ce8 100%);  
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-weight: bolder;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+    margin-top: 10px;
+  }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(145, 70, 255, 0.5);
-}
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(145, 70, 255, 0.5);
+  }
 
-button:active {
-  transform: scale(0.98);
-}
+  button:active {
+    transform: scale(0.98);
+  }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 </head>
 <body>
+  <!-- Certifique-se de que a imagem existe na pasta 'assets' ou troque o caminho se necessário -->
   <img src="assets/twitch.png" width="300px" style="margin-top: 50px;" alt="twitch logo">
+  
   <h1>Faça o download dos clipes</h1>
-  <div class=".container-input">
+  
+  <div class="container-input">
     <div>
-      <input type="text" id="canal" placeholder="Twitch.tv/">
-      <input type="date" id="data">
+      <input type="text" id="canal" placeholder="Nomedocanal">
     </div>
-    <button onclick="buscar()">Buscar Clips</button>
+    <button onclick="buscar()">Buscar Clips (Últimos 30 Dias)</button>
   </div> 
-  <div id="clips">
-  </div>
+  
+  <div id="clips"></div>
 
   <script>
-   async function buscar() {
-  const canal = document.getElementById("canal").value;
-  const data = document.getElementById("data").value;
-  if (!canal || !data) return alert("Digite canal e data!");
+    async function buscar() {
+      const canal = document.getElementById("canal").value;
+      if (!canal) return alert("Digite o nome do canal!");
 
-  const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}&date=${data}`);
-  const json = await res.json();
+      // Aponta para a nova rota /clips que processa os últimos 30 dias automaticamente
+      const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}`);
+      const json = await res.json();
 
-  const clipsDiv = document.getElementById("clips");
-  clipsDiv.innerHTML = "";
+      const clipsDiv = document.getElementById("clips");
+      clipsDiv.innerHTML = "";
 
-  if (!json.data || json.data.length === 0) {
-    clipsDiv.innerHTML = "<p>Nenhum clipe encontrado nesse dia.</p>";
-    return;
-  }
-  const host = window.location.hostname;
-  json.data.forEach(clip => {
-    const videoPreviewUrl = clip.thumbnail_url.split("-preview-")[0] + ".mp4"; 
-    const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
-    const embedUrl = `${clip.embed_url}&parent=${host}`;
+      if (!json.data || json.data.length === 0) {
+        clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; font-size: 1.2rem; color: #333;'>Nenhum clipe encontrado nos últimos 30 dias.</p>";
+        return;
+      }
+      
+      // Ajuste para evitar falhas no embed caso você teste abrindo o arquivo direto no navegador (file://)
+      const host = window.location.hostname || "localhost";
+      
+      json.data.forEach(clip => {
+        // URLs do nosso backend no Render
+        const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
+        const downloadVerticalUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}&vertical=true`; 
+        
+        // URL oficial da Twitch para embutir o player na tela
+        const embedUrl = `${clip.embed_url}&parent=${host}`;
 
-    const div = document.createElement("div");
-    div.className = "clip";
-    div.innerHTML = `
-    <iframe
-    src="${embedUrl}"
-    height="300"
-    width="400"
-    frameborder="0"
-    scrolling="no"
-    allowfullscreen="true">
-    </iframe><br>
-    <a href="${downloadUrl}" download>⬇️ Download</a>
-  `;
-    clipsDiv.appendChild(div);
-  });
-}
+        const div = document.createElement("div");
+        div.className = "clip";
+        
+        // Player de vídeo e botões customizados
+        div.innerHTML = `
+        <iframe
+        src="${embedUrl}"
+        height="300"
+        width="400"
+        frameborder="0"
+        scrolling="no"
+        allowfullscreen="true">
+        </iframe>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px; width: 400px;">
+          <a href="${downloadUrl}" download style="text-decoration: none; background: #E0E0E0; padding: 12px; border-radius: 8px; color: #333; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s;">
+            🖥️ Download Original (16:9)
+          </a>
+          <a href="${downloadVerticalUrl}" download style="text-decoration: none; background: #111; padding: 12px; border-radius: 8px; color: #FFF; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s;">
+            📱 Download Vertical (TikTok/Reels)
+          </a>
+        </div>
+      `;
+        clipsDiv.appendChild(div);
+      });
+    }
   </script>
 </body>
 </html>
