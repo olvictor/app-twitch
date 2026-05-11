@@ -105,13 +105,12 @@ app.get("/clips", async (req, res) => {
 
 app.get("/download-clip", async (req, res) => {
   try {
-    // 2️⃣ Agora recebemos também o parâmetro 'vertical'
     const { clipId, vertical } = req.query; 
     const token = await getAccessToken();
 
     const clipRes = await fetch(`https://api.twitch.tv/helix/clips?id=${clipId}`, {
       headers: {
-        "Client-ID": process.env.CLIENT_ID, // Corrigido para maiúsculo para bater com o .env
+        "Client-ID": process.env.CLIENT_ID,
         "Authorization": `Bearer ${token}`
       }
     });
@@ -123,34 +122,47 @@ app.get("/download-clip", async (req, res) => {
 
     // Pega a URL do MP4
     const videoUrl = clipData.data[0].thumbnail_url.split("-preview-")[0] + ".mp4";
-
-    // Define os headers para download do arquivo
     const isVertical = vertical === 'true';
-    res.setHeader("Content-Disposition", `attachment; filename=${clipId}${isVertical ? '_vertical' : ''}.mp4`);
-    res.setHeader("Content-Type", "video/mp4");
 
     if (isVertical) {
-      // 3️⃣ Processa o vídeo em formato TikTok/Reels (9:16)
+      // DOWNLOAD VERTICAL (TIKTOK/REELS) - Via FFmpeg
+      res.setHeader("Content-Disposition", `attachment; filename=${clipId}_vertical.mp4`);
+      res.setHeader("Content-Type", "video/mp4");
+
       ffmpeg(videoUrl)
-        .videoFilters("crop=ih*(9/16):ih") // Faz o crop mantendo o centro do vídeo
-        .outputOptions("-c:a copy")        // Copia o áudio original sem recodificar (muito mais rápido)
+        .videoFilters("crop=ih*(9/16):ih") // Corta no formato 9:16
+        .outputOptions([
+          "-c:a copy", // Copia o áudio sem processar (mais rápido)
+          "-movflags frag_keyframe+empty_moov" // 🔥 ESSENCIAL: Permite que o MP4 seja enviado via stream
+        ])
         .format("mp4")
         .on("error", (err) => {
           console.error("Erro no FFmpeg:", err);
-          if (!res.headersSent) res.status(500).send("Erro ao processar vídeo vertical");
+          if (!res.headersSent) res.status(500).send("Erro ao processar vídeo vertical.");
         })
-        .pipe(res, { end: true }); // Envia o vídeo processado direto para o navegador
+        .pipe(res, { end: true }); // Envia o vídeo aos poucos para o usuário
+
     } else {
-      // 4️⃣ Download Original Horizontal (Otimizado com stream)
+      // DOWNLOAD ORIGINAL - Voltando para o método de Buffer que funcionava para você
       const videoRes = await fetch(videoUrl);
-      videoRes.body.pipe(res);
+      
+      if (!videoRes.ok) {
+         return res.status(500).send("Erro ao buscar o vídeo original na Twitch");
+      }
+
+      const videoBuffer = await videoRes.buffer();
+      
+      res.setHeader("Content-Disposition", `attachment; filename=${clipId}.mp4`);
+      res.setHeader("Content-Type", "video/mp4");
+      res.send(videoBuffer);
     }
 
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Erro ao baixar o clipe");
+    console.error("Erro na rota de download:", err);
+    if (!res.headersSent) {
+      res.status(500).send("Erro ao baixar o clipe");
+    }
   }
 });
-
 
 app.listen(PORT, () => console.log("Backend rodando."));
