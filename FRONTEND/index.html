@@ -16,6 +16,7 @@
     width: 100vw;
     overflow-x: hidden;
   }
+  
   #clips {
     width: 100vw;
     display: flex;
@@ -38,7 +39,11 @@
     filter: drop-shadow(0px 0px 5px #9146FF);
   }
 
-  input, button { margin: 5px; padding: 10px; border-radius: 5px; }
+  input, button { 
+    margin: 5px; 
+    padding: 10px; 
+    border-radius: 5px; 
+  }
   
   .container-input {
     display: flex;
@@ -94,14 +99,13 @@
   </style>
 </head>
 <body>
-  <!-- Certifique-se de que a imagem existe na pasta 'assets' ou troque o caminho se necessário -->
   <img src="assets/twitch.png" width="300px" style="margin-top: 50px;" alt="twitch logo">
   
   <h1>Faça o download dos clipes</h1>
   
   <div class="container-input">
     <div>
-      <input type="text" id="canal" placeholder="Nomedocanal">
+      <input type="text" id="canal" placeholder="Twitch.tv/NomeDoCanal">
     </div>
     <button onclick="buscar()">Buscar Clips (Últimos 30 Dias)</button>
   </div> 
@@ -113,7 +117,7 @@
       const canal = document.getElementById("canal").value;
       if (!canal) return alert("Digite o nome do canal!");
 
-      // Aponta para a nova rota /clips que processa os últimos 30 dias automaticamente
+      // Aponta para o backend buscando a nova rota automatizada
       const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}`);
       const json = await res.json();
 
@@ -125,21 +129,20 @@
         return;
       }
       
-      // Ajuste para evitar falhas no embed caso você teste abrindo o arquivo direto no navegador (file://)
       const host = window.location.hostname || "localhost";
       
       json.data.forEach(clip => {
-        // URLs do nosso backend no Render
+        // Rota de download no seu servidor
         const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
-        const downloadVerticalUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}&vertical=true`; 
         
-        // URL oficial da Twitch para embutir o player na tela
+        // Link direto para a página original do clipe na Twitch
+        const editNaTwitchUrl = clip.url; 
+        
         const embedUrl = `${clip.embed_url}&parent=${host}`;
 
         const div = document.createElement("div");
         div.className = "clip";
         
-        // Player de vídeo e botões customizados
         div.innerHTML = `
         <iframe
         src="${embedUrl}"
@@ -154,8 +157,8 @@
           <a href="${downloadUrl}" download style="text-decoration: none; background: #E0E0E0; padding: 12px; border-radius: 8px; color: #333; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s;">
             🖥️ Download Original (16:9)
           </a>
-          <a href="${downloadVerticalUrl}" download style="text-decoration: none; background: #111; padding: 12px; border-radius: 8px; color: #FFF; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s;">
-            📱 Download Vertical (TikTok/Reels)
+          <a href="${editNaTwitchUrl}" target="_blank" style="text-decoration: none; background: #9146FF; padding: 12px; border-radius: 8px; color: #FFF; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s; border: 2px solid #9146FF;">
+            📱 Criar Vertical (Nativo da Twitch)
           </a>
         </div>
       `;
