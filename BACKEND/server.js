@@ -60,14 +60,15 @@ app.get("/clips", async (req, res) => {
       return res.status(404).json({ error: "Canal não encontrado" });
     }
 
-    // 2️⃣ Calcular datas: Últimos 30 dias até o momento atual
+    // 2️⃣ Calcular datas (Últimos 30 dias até agora)
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30); // Subtrai 30 dias da data de hoje
     
-    const start = thirtyDaysAgo.toISOString();
-    const end = new Date().toISOString(); 
+    const start = thirtyDaysAgo.toISOString(); // Data de 30 dias atrás
+    const end = new Date().toISOString();      // Data de agora
 
     // 3️⃣ Buscar clips no range
+    // Dica: coloquei first=50 para ele buscar um pool maior antes de cortar os 15 mais recentes
     const clipsRes = await fetch(
       `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&started_at=${start}&ended_at=${end}&first=50`,
       {
@@ -81,15 +82,16 @@ app.get("/clips", async (req, res) => {
     const clipsData = await clipsRes.json();
 
     if (!clipsData.data) {
+      // Retorna no formato esperado pelo frontend
       return res.json({ data: [] });
     }
 
-    // 4️⃣ Ordenar do mais recente para o mais antigo
+    // 4️⃣ Ordenar por mais recentes (opcional: a Twitch já ordena por visualizações por padrão)
     const sorted = clipsData.data.sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
 
-    // 5️⃣ Retornar os 15 mais recentes
+    // 5️⃣ Retornar os 15 mais recentes envelopados no objeto "data"
     const latest = sorted.slice(0, 15);
 
     res.json({ data: latest });
