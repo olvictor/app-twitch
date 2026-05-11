@@ -5,12 +5,12 @@
   <title>Twitch Clips Download</title>
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-   body {
+  body {
     min-height: 100vh;
     margin: 0;
-    background-color: #FAFAFA;
+    background-color: #F3F3F7; /* Fundo levemente mais acinzentado para destacar os cards brancos */
     font-family: "Bebas Neue", sans-serif;
     text-align: center;
     width: 100vw;
@@ -19,151 +19,251 @@
   
   #clips {
     width: 100vw;
+    max-width: 1400px;
+    margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     padding-bottom: 50px;
+    gap: 25px; /* Espaçamento mais limpo entre os cards */
   }
 
-  .clip {
+  /* Novo design de Card Smooth */
+  .clip-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06); /* Sombra bem suave */
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px;
+    position: relative; /* Necessário para a Tag de "Já baixado" ficar flutuando */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeIn 0.5s ease backwards; /* Animação ao carregar */
+  }
+
+  .clip-card:hover {
+    transform: translateY(-5px); /* Levanta levemente ao passar o mouse */
+    box-shadow: 0 12px 32px rgba(145, 70, 255, 0.15); /* Sombra ganha o tom roxo da Twitch */
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Tag de Já Baixado */
+  .badge-baixado {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #00E676; /* Verde sucesso */
+    color: #000;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4);
+    z-index: 10;
+    text-transform: uppercase;
   }
 
   iframe { 
-    margin-bottom: 10px;
-    border-radius: 20px; 
-    filter: drop-shadow(0px 0px 5px #9146FF);
+    margin-bottom: 15px;
+    border-radius: 12px; 
+    background-color: #000; /* Fundo preto caso demore a carregar */
   }
 
-  input, button { 
-    margin: 5px; 
-    padding: 10px; 
-    border-radius: 5px; 
-  }
-  
   .container-input {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-bottom: 30px;
   }
   
   h1 {
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 700;
     letter-spacing: 1.2px;
     color: #9146FF;
+    margin-bottom: 10px;
   }
   
   input {
     background-color: #FFFFFF;  
     border: 2px solid #E0E0E0;    
     border-radius: 8px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     font-size: 16px;
     outline: none;
     transition: border 0.2s ease, box-shadow 0.2s ease;
     font-family: 'Inter', sans-serif;
+    width: 250px;
   }
 
   input:focus {
     border-color: #9146FF;          
-    box-shadow: 0 0 6px rgba(145, 70, 255, 0.3);
+    box-shadow: 0 0 0 4px rgba(145, 70, 255, 0.15);
   }
 
-  button {
+  .btn-buscar {
     background: linear-gradient(90deg, #9146FF 0%, #772ce8 100%);  
     color: white;
-    padding: 12px 24px;
+    padding: 12px 28px;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    font-weight: bolder;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    font-weight: 800;
     text-transform: uppercase;
     font-family: 'Inter', sans-serif;
-    margin-top: 10px;
+    font-size: 15px;
+    margin-top: 15px;
   }
 
-  button:hover {
+  .btn-buscar:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(145, 70, 255, 0.5);
+    box-shadow: 0 6px 15px rgba(145, 70, 255, 0.4);
+    filter: brightness(1.1);
   }
 
-  button:active {
+  .btn-buscar:active {
     transform: scale(0.98);
   }
+
+  /* Botões dos cards */
+  .btn-acao {
+    text-decoration: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .btn-original {
+    background: #F0F0F5;
+    color: #333;
+  }
+  .btn-original:hover { background: #E4E4EB; }
+
+  .btn-vertical {
+    background: #9146FF;
+    color: #FFF;
+  }
+  .btn-vertical:hover { background: #772ce8; }
+
   </style>
 </head>
 <body>
-  <img src="assets/twitch.png" width="300px" style="margin-top: 50px;" alt="twitch logo">
+  <img src="assets/twitch.png" width="300px" style="margin-top: 40px;" alt="twitch logo" onerror="this.style.display='none'">
   
   <h1>Faça o download dos clipes</h1>
   
   <div class="container-input">
     <div>
-      <input type="text" id="canal" placeholder="Twitch.tv/NomeDoCanal">
+      <input type="text" id="canal" placeholder="Twitch.tv/NomeDoCanal" onkeypress="if(event.key === 'Enter') buscar()">
     </div>
-    <button onclick="buscar()">Buscar Clips (Últimos 30 Dias)</button>
+    <button class="btn-buscar" onclick="buscar()">Buscar Últimos 30 Dias</button>
   </div> 
   
   <div id="clips"></div>
 
   <script>
+    // --- FUNÇÕES DE LOCALSTORAGE --- //
+    // Pega a lista de IDs salvos no navegador (se não existir, retorna array vazio)
+    function getDownloadsSalvos() {
+      const salvos = localStorage.getItem('twitch_clipes_baixados');
+      return salvos ? JSON.parse(salvos) : [];
+    }
+
+    // Salva um novo ID e atualiza a interface na hora
+    function registrarDownload(clipId) {
+      const salvos = getDownloadsSalvos();
+      
+      // Se não estiver na lista, adiciona
+      if (!salvos.includes(clipId)) {
+        salvos.push(clipId);
+        localStorage.setItem('twitch_clipes_baixados', JSON.stringify(salvos));
+        
+        // Coloca a tag visual no card imediatamente
+        const card = document.getElementById(`card-${clipId}`);
+        if (card && !card.querySelector('.badge-baixado')) {
+          const badge = document.createElement('div');
+          badge.className = 'badge-baixado';
+          badge.innerText = '✔️ Já Baixado';
+          card.appendChild(badge);
+        }
+      }
+    }
+
+    // --- FUNÇÃO DE BUSCA --- //
     async function buscar() {
-      const canal = document.getElementById("canal").value;
+      const canal = document.getElementById("canal").value.trim();
       if (!canal) return alert("Digite o nome do canal!");
 
-      // Aponta para o backend buscando a nova rota automatizada
-      const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}`);
-      const json = await res.json();
-
       const clipsDiv = document.getElementById("clips");
-      clipsDiv.innerHTML = "";
+      clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; color: #666;'>Buscando clipes...</p>"; // Feedback de loading
 
-      if (!json.data || json.data.length === 0) {
-        clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; font-size: 1.2rem; color: #333;'>Nenhum clipe encontrado nos últimos 30 dias.</p>";
-        return;
+      try {
+        const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}`);
+        const json = await res.json();
+
+        clipsDiv.innerHTML = "";
+
+        if (!json.data || json.data.length === 0) {
+          clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; font-size: 1.2rem; color: #333;'>Nenhum clipe encontrado nos últimos 30 dias.</p>";
+          return;
+        }
+        
+        const host = window.location.hostname || "localhost";
+        const downloadsSalvos = getDownloadsSalvos(); // Pegamos a lista do localStorage
+        
+        json.data.forEach((clip, index) => {
+          const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
+          const editNaTwitchUrl = clip.url; 
+          const embedUrl = `${clip.embed_url}&parent=${host}`;
+
+          // Verifica se este clipe específico já foi baixado antes
+          const jaBaixado = downloadsSalvos.includes(clip.id);
+
+          const div = document.createElement("div");
+          div.className = "clip-card";
+          div.id = `card-${clip.id}`; // ID único para podermos injetar a tag depois
+          div.style.animationDelay = `${index * 0.05}s`; // Efeito cascata na animação de entrada
+          
+          div.innerHTML = `
+          ${jaBaixado ? '<div class="badge-baixado">✔️ Já Baixado</div>' : ''}
+          
+          <iframe
+          src="${embedUrl}"
+          height="280"
+          width="400"
+          frameborder="0"
+          scrolling="no"
+          allowfullscreen="true">
+          </iframe>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px; width: 400px; margin-top: 5px;">
+            <a href="${downloadUrl}" download class="btn-acao btn-original" onclick="registrarDownload('${clip.id}')">
+              🖥️ Download Original (16:9)
+            </a>
+            <a href="${editNaTwitchUrl}" target="_blank" class="btn-acao btn-vertical" onclick="registrarDownload('${clip.id}')">
+              📱 Criar Vertical (Nativo da Twitch)
+            </a>
+          </div>
+        `;
+          clipsDiv.appendChild(div);
+        });
+      } catch (err) {
+        clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; color: red;'>Erro ao buscar clipes. Verifique se o backend está rodando e respondendo corretamente.</p>";
       }
-      
-      const host = window.location.hostname || "localhost";
-      
-      json.data.forEach(clip => {
-        // Rota de download no seu servidor
-        const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
-        
-        // Link direto para a página original do clipe na Twitch
-        const editNaTwitchUrl = clip.url; 
-        
-        const embedUrl = `${clip.embed_url}&parent=${host}`;
-
-        const div = document.createElement("div");
-        div.className = "clip";
-        
-        div.innerHTML = `
-        <iframe
-        src="${embedUrl}"
-        height="300"
-        width="400"
-        frameborder="0"
-        scrolling="no"
-        allowfullscreen="true">
-        </iframe>
-        
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px; width: 400px;">
-          <a href="${downloadUrl}" download style="text-decoration: none; background: #E0E0E0; padding: 12px; border-radius: 8px; color: #333; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s;">
-            🖥️ Download Original (16:9)
-          </a>
-          <a href="${editNaTwitchUrl}" target="_blank" style="text-decoration: none; background: #9146FF; padding: 12px; border-radius: 8px; color: #FFF; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: bold; transition: background 0.2s; border: 2px solid #9146FF;">
-            📱 Criar Vertical (Nativo da Twitch)
-          </a>
-        </div>
-      `;
-        clipsDiv.appendChild(div);
-      });
     }
   </script>
 </body>
