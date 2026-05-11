@@ -2,10 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const fetch = require("node-fetch");
 const cors = require("cors");
-// 1️⃣ Importando o FFmpeg
-const ffmpeg = require("fluent-ffmpeg");
-const ffmpegPath = require("ffmpeg-static");
-ffmpeg.setFfmpegPath(ffmpegPath);
 
 const app = express();
 app.use(cors());
@@ -27,11 +23,13 @@ async function getAccessToken() {
 
     const data = await res.json();
     accessToken = data.access_token;
-    tokenExpires = Date.now() + data.expires_in * 1000;
+    // Multiplica por 1000 para converter para milissegundos
+    tokenExpires = Date.now() + (data.expires_in * 1000); 
   }
   return accessToken;
 }
 
+// ROTA DE BUSCA DOS ÚLTIMOS 30 DIAS
 app.get("/clips", async (req, res) => {
   try {
     const { channel } = req.query;
@@ -44,6 +42,7 @@ app.get("/clips", async (req, res) => {
 
     const token = await getAccessToken();
 
+    // 1️⃣ Buscar user_id
     const userRes = await fetch(
       `https://api.twitch.tv/helix/users?login=${channel}`,
       {
@@ -61,15 +60,14 @@ app.get("/clips", async (req, res) => {
       return res.status(404).json({ error: "Canal não encontrado" });
     }
 
-    // 2️⃣ Calcular datas (Últimos 30 dias até agora)
+    // 2️⃣ Calcular datas: Últimos 30 dias até o momento atual
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30); // Subtrai 30 dias da data de hoje
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const start = thirtyDaysAgo.toISOString(); // Data de 30 dias atrás
-    const end = new Date().toISOString();      // Data de agora
+    const start = thirtyDaysAgo.toISOString();
+    const end = new Date().toISOString(); 
 
     // 3️⃣ Buscar clips no range
-    // Dica: coloquei first=50 para ele buscar um pool maior antes de cortar os 15 mais recentes
     const clipsRes = await fetch(
       `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&started_at=${start}&ended_at=${end}&first=50`,
       {
@@ -83,16 +81,15 @@ app.get("/clips", async (req, res) => {
     const clipsData = await clipsRes.json();
 
     if (!clipsData.data) {
-      // Retorna no formato esperado pelo frontend
       return res.json({ data: [] });
     }
 
-    // 4️⃣ Ordenar por mais recentes (opcional: a Twitch já ordena por visualizações por padrão)
+    // 4️⃣ Ordenar do mais recente para o mais antigo
     const sorted = clipsData.data.sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
 
-    // 5️⃣ Retornar os 15 mais recentes envelopados no objeto "data"
+    // 5️⃣ Retornar os 15 mais recentes
     const latest = sorted.slice(0, 15);
 
     res.json({ data: latest });
@@ -102,10 +99,10 @@ app.get("/clips", async (req, res) => {
   }
 });
 
-
+// ROTA DE DOWNLOAD ORIGINAL (Segura e usando Buffer)
 app.get("/download-clip", async (req, res) => {
   try {
-    const { clipId, vertical } = req.query; 
+    const { clipId } = req.query;
     const token = await getAccessToken();
 
     const clipRes = await fetch(`https://api.twitch.tv/helix/clips?id=${clipId}`, {
@@ -120,49 +117,28 @@ app.get("/download-clip", async (req, res) => {
       return res.status(404).send("Clip não encontrado");
     }
 
-    // Pega a URL do MP4
+    // Transformando a URL da thumbnail na URL de download do MP4
     const videoUrl = clipData.data[0].thumbnail_url.split("-preview-")[0] + ".mp4";
-    const isVertical = vertical === 'true';
 
-    if (isVertical) {
-      // DOWNLOAD VERTICAL (TIKTOK/REELS) - Via FFmpeg
-      res.setHeader("Content-Disposition", `attachment; filename=${clipId}_vertical.mp4`);
-      res.setHeader("Content-Type", "video/mp4");
-
-      ffmpeg(videoUrl)
-        .videoFilters("crop=ih*(9/16):ih") // Corta no formato 9:16
-        .outputOptions([
-          "-c:a copy", // Copia o áudio sem processar (mais rápido)
-          "-movflags frag_keyframe+empty_moov" // 🔥 ESSENCIAL: Permite que o MP4 seja enviado via stream
-        ])
-        .format("mp4")
-        .on("error", (err) => {
-          console.error("Erro no FFmpeg:", err);
-          if (!res.headersSent) res.status(500).send("Erro ao processar vídeo vertical.");
-        })
-        .pipe(res, { end: true }); // Envia o vídeo aos poucos para o usuário
-
-    } else {
-      // DOWNLOAD ORIGINAL - Voltando para o método de Buffer que funcionava para você
-      const videoRes = await fetch(videoUrl);
-      
-      if (!videoRes.ok) {
-         return res.status(500).send("Erro ao buscar o vídeo original na Twitch");
-      }
-
-      const videoBuffer = await videoRes.buffer();
-      
-      res.setHeader("Content-Disposition", `attachment; filename=${clipId}.mp4`);
-      res.setHeader("Content-Type", "video/mp4");
-      res.send(videoBuffer);
+    const videoRes = await fetch(videoUrl);
+    
+    if (!videoRes.ok) {
+       return res.status(500).send("Falha ao baixar o arquivo da Twitch.");
     }
+    
+    // Usando .buffer() igual ao seu código original (funciona melhor na Render)
+    const videoBuffer = await videoRes.buffer();
+
+    res.setHeader("Content-Disposition", `attachment; filename=${clipId}.mp4`);
+    res.setHeader("Content-Type", "video/mp4");
+    res.send(videoBuffer);
 
   } catch (err) {
-    console.error("Erro na rota de download:", err);
+    console.error("Erro ao fazer download:", err);
     if (!res.headersSent) {
       res.status(500).send("Erro ao baixar o clipe");
     }
   }
 });
 
-app.listen(PORT, () => console.log("Backend rodando."));
+app.listen(PORT, () => console.log(`Backend rodando na porta ${PORT}.`));
