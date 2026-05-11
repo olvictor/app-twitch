@@ -10,7 +10,7 @@
   body {
     min-height: 100vh;
     margin: 0;
-    background-color: #F3F3F7; /* Fundo levemente mais acinzentado para destacar os cards brancos */
+    background-color: #F3F3F7;
     font-family: "Bebas Neue", sans-serif;
     text-align: center;
     width: 100vw;
@@ -26,26 +26,25 @@
     justify-content: center;
     align-items: center;
     padding-bottom: 50px;
-    gap: 25px; /* Espaçamento mais limpo entre os cards */
+    gap: 20px; /* Reduzido levemente para acomodar os cards menores */
   }
 
-  /* Novo design de Card Smooth */
   .clip-card {
     background: #FFFFFF;
     border-radius: 16px;
     padding: 15px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06); /* Sombra bem suave */
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative; /* Necessário para a Tag de "Já baixado" ficar flutuando */
+    position: relative;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeIn 0.5s ease backwards; /* Animação ao carregar */
+    animation: fadeIn 0.5s ease backwards;
   }
 
   .clip-card:hover {
-    transform: translateY(-5px); /* Levanta levemente ao passar o mouse */
-    box-shadow: 0 12px 32px rgba(145, 70, 255, 0.15); /* Sombra ganha o tom roxo da Twitch */
+    transform: translateY(-5px);
+    box-shadow: 0 12px 32px rgba(145, 70, 255, 0.15);
   }
 
   @keyframes fadeIn {
@@ -53,16 +52,15 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Tag de Já Baixado */
   .badge-baixado {
     position: absolute;
-    top: -12px;
-    right: -12px;
-    background: #00E676; /* Verde sucesso */
+    top: -10px;
+    right: -10px;
+    background: #00E676;
     color: #000;
     padding: 6px 14px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-family: 'Inter', sans-serif;
     font-weight: 800;
     box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4);
@@ -73,7 +71,7 @@
   iframe { 
     margin-bottom: 15px;
     border-radius: 12px; 
-    background-color: #000; /* Fundo preto caso demore a carregar */
+    background-color: #000;
   }
 
   .container-input {
@@ -133,13 +131,12 @@
     transform: scale(0.98);
   }
 
-  /* Botões dos cards */
   .btn-acao {
     text-decoration: none;
-    padding: 12px;
+    padding: 10px; /* Reduzido levemente para o novo tamanho do card */
     border-radius: 8px;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13px; /* Fonte levemente menor */
     font-weight: 700;
     transition: all 0.2s ease;
     text-align: center;
@@ -159,6 +156,39 @@
   }
   .btn-vertical:hover { background: #772ce8; }
 
+  /* --- Efeito de Loading Visual --- */
+  .loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 40px;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #E0E0E0;
+    border-bottom-color: #9146FF;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .loader-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #666;
+    margin-top: 15px;
+    font-size: 1.1rem;
+  }
   </style>
 </head>
 <body>
@@ -176,23 +206,18 @@
   <div id="clips"></div>
 
   <script>
-    // --- FUNÇÕES DE LOCALSTORAGE --- //
-    // Pega a lista de IDs salvos no navegador (se não existir, retorna array vazio)
     function getDownloadsSalvos() {
       const salvos = localStorage.getItem('twitch_clipes_baixados');
       return salvos ? JSON.parse(salvos) : [];
     }
 
-    // Salva um novo ID e atualiza a interface na hora
     function registrarDownload(clipId) {
       const salvos = getDownloadsSalvos();
       
-      // Se não estiver na lista, adiciona
       if (!salvos.includes(clipId)) {
         salvos.push(clipId);
         localStorage.setItem('twitch_clipes_baixados', JSON.stringify(salvos));
         
-        // Coloca a tag visual no card imediatamente
         const card = document.getElementById(`card-${clipId}`);
         if (card && !card.querySelector('.badge-baixado')) {
           const badge = document.createElement('div');
@@ -203,13 +228,19 @@
       }
     }
 
-    // --- FUNÇÃO DE BUSCA --- //
     async function buscar() {
       const canal = document.getElementById("canal").value.trim();
       if (!canal) return alert("Digite o nome do canal!");
 
       const clipsDiv = document.getElementById("clips");
-      clipsDiv.innerHTML = "<p style='font-family: Inter, sans-serif; color: #666;'>Buscando clipes...</p>"; // Feedback de loading
+      
+      // Injeta o novo Loader na tela
+      clipsDiv.innerHTML = `
+        <div class="loader-container">
+          <span class="spinner"></span>
+          <p class="loader-text">Buscando os melhores clipes...</p>
+        </div>
+      `;
 
       try {
         const res = await fetch(`https://app-twitch.onrender.com/clips?channel=${canal}`);
@@ -223,34 +254,35 @@
         }
         
         const host = window.location.hostname || "localhost";
-        const downloadsSalvos = getDownloadsSalvos(); // Pegamos a lista do localStorage
+        const downloadsSalvos = getDownloadsSalvos();
         
         json.data.forEach((clip, index) => {
           const downloadUrl = `https://app-twitch.onrender.com/download-clip?clipId=${clip.id}`; 
           const editNaTwitchUrl = clip.url; 
           const embedUrl = `${clip.embed_url}&parent=${host}`;
 
-          // Verifica se este clipe específico já foi baixado antes
           const jaBaixado = downloadsSalvos.includes(clip.id);
 
           const div = document.createElement("div");
           div.className = "clip-card";
-          div.id = `card-${clip.id}`; // ID único para podermos injetar a tag depois
-          div.style.animationDelay = `${index * 0.05}s`; // Efeito cascata na animação de entrada
+          div.id = `card-${clip.id}`;
+          div.style.animationDelay = `${index * 0.05}s`;
           
+          // Tamanho do iframe reduzido de 400x280 para 320x180 (padrão 16:9)
+          // Largura da div dos botões acompanhou a redução para manter o design alinhado
           div.innerHTML = `
           ${jaBaixado ? '<div class="badge-baixado">✔️ Já Baixado</div>' : ''}
           
           <iframe
           src="${embedUrl}"
-          height="280"
-          width="400"
+          height="180" 
+          width="320"
           frameborder="0"
           scrolling="no"
           allowfullscreen="true">
           </iframe>
           
-          <div style="display: flex; flex-direction: column; gap: 8px; width: 400px; margin-top: 5px;">
+          <div style="display: flex; flex-direction: column; gap: 8px; width: 320px; margin-top: 5px;">
             <a href="${downloadUrl}" download class="btn-acao btn-original" onclick="registrarDownload('${clip.id}')">
               🖥️ Download Original (16:9)
             </a>
